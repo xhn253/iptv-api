@@ -1,8 +1,19 @@
 # 这是订阅源列表，每行一个订阅地址
 # This is a list of subscription sources, with one subscription address per line
+# 接口源
+https://gitee.com/xiao-ping2/iptv-api/raw/master/output/xp_result.txt
+https://gitee.com/xiao-ping2/iptv-api/raw/master/output/xp_result.txt
+# 数据源
+https://gitee.com/xiao-ping2/iptv-api/raw/master/source.json
 
-
-
+# 默认
+https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u
+# IPV4
+https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv4/result.m3u
+# IPV6
+https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv6/result.m3u
+# 点播源
+https://raw.githubusercontent.com/Guovin/iptv-api/gd/source.json
 
 
 [WHITELIST]
