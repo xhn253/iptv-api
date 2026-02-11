@@ -1,116 +1,96 @@
 import os
+import re
 
-config_path = "config"
+from utils.i18n import t
 
-output_path = "output"
+config_dir = "config"
 
-whitelist_path = os.path.join(config_path, "whitelist.txt")
+output_dir = "output"
 
-blacklist_path = os.path.join(config_path, "blacklist.txt")
+hls_path = os.path.join(config_dir, "hls")
 
-subscribe_path = os.path.join(config_path, "subscribe.txt")
+local_dir_path = os.path.join(config_dir, "local")
 
-result_path = os.path.join(output_path, "result_new.txt")
+local_path = os.path.join(config_dir, "local.txt")
 
-cache_path = os.path.join(output_path, "cache.pkl")
+channel_logo_path = os.path.join(config_dir, "logo")
 
-sort_log_path = os.path.join(output_path, "sort.log")
+alias_path = os.path.join(config_dir, "alias.txt")
 
-log_path = os.path.join(output_path, "log.log")
+epg_path = os.path.join(config_dir, "epg.txt")
 
-url_host_pattern = r"((https?|rtmp)://)?(\[[0-9a-fA-F:]+]|([\w-]+\.?)+[\w-]+)"
+whitelist_path = os.path.join(config_dir, "whitelist.txt")
 
-url_pattern = url_host_pattern + r"(.*)?"
+blacklist_path = os.path.join(config_dir, "blacklist.txt")
 
-rtmp_url_pattern = r"^rtmp://.*$"
+subscribe_path = os.path.join(config_dir, "subscribe.txt")
 
-rtp_pattern = r"^([^,，]+)(?:[,，])?(rtp://.*)$"
+epg_result_path = os.path.join(output_dir, "epg/epg.xml")
 
-demo_txt_pattern = r"^([^,，]+)(?:[,，])?(?!#genre#)" + r"(" + url_pattern + r")?"
+epg_gz_result_path = os.path.join(output_dir, "epg/epg.gz")
 
-txt_pattern = r"^([^,，]+)(?:[,，])(?!#genre#)" + r"(" + url_pattern + r")"
+ipv4_result_path = os.path.join(output_dir, "ipv4/result.txt")
 
-m3u_pattern = r"^#EXTINF:-1.*?(?:，|,)(.*?)\n" + r"(" + url_pattern + r")"
+ipv6_result_path = os.path.join(output_dir, "ipv6/result.txt")
 
-sub_pattern = r"-|_|\((.*?)\)|\（(.*?)\）|\[(.*?)\]|\「(.*?)\」| |｜|频道|普清|标清|高清|HD|hd|超清|超高|超高清|中央|央视|电视台|台|电信|联通|移动"
+rtmp_data_path = os.path.join(output_dir, "data/rtmp.db")
+
+hls_result_path = os.path.join(output_dir, "hls.txt")
+
+hls_ipv4_result_path = os.path.join(output_dir, "ipv4/hls.txt")
+
+hls_ipv6_result_path = os.path.join(output_dir, "ipv6/hls.txt")
+
+cache_path = os.path.join(output_dir, "data/cache.gz")
+
+frozen_path = os.path.join(output_dir, "data/frozen.gz")
+
+speed_test_log_path = os.path.join(output_dir, "log/speed_test.log")
+
+result_log_path = os.path.join(output_dir, "log/result.log")
+
+statistic_log_path = os.path.join(output_dir, "log/statistic.log")
+
+nomatch_log_path = os.path.join(output_dir, "log/nomatch.log")
+
+log_path = os.path.join(output_dir, "log/log.log")
+
+url_host_pattern = re.compile(r"((https?|rtmp|rtsp)://)?([^:@/]+(:[^:@/]*)?@)?(\[[0-9a-fA-F:]+]|([\w-]+\.)+[\w-]+)")
+
+url_pattern = re.compile(
+    r"(?P<url>" + url_host_pattern.pattern + r"\S*)")
+
+rt_url_pattern = re.compile(r"^(rtmp|rtsp)://.*$")
+
+demo_txt_pattern = re.compile(r"^(?P<name>[^,，]+)[,，]?(?!#genre#)(?P<value>.+)?$")
+
+txt_pattern = re.compile(r"^(?P<name>[^,，]+)[,，](?!#genre#)(?P<value>.+)$")
+
+multiline_txt_pattern = re.compile(r"^(?P<name>[^,，]+)[,，](?!#genre#)(?P<value>.+)$", re.MULTILINE)
+
+m3u_pattern = re.compile(r"^#EXTINF:-1[\s+,，](?P<attributes>[^,，]+)[，,](?P<name>.*?)\n(?P<value>.+)$")
+
+multiline_m3u_pattern = re.compile(
+    r"^#EXTINF:-1[\s+,，](?P<attributes>[^,，]+)[，,](?P<name>.*?)\n(?P<options>(#EXTVLCOPT:.*\n)*?)(?P<value>.+)$",
+    re.MULTILINE)
+
+key_value_pattern = re.compile(r'(?P<key>\w+)=(?P<value>\S+)')
+
+sub_pattern = re.compile(
+    r"-|_|\((.*?)\)|（(.*?)）|\[(.*?)]|「(.*?)」| |｜|频道|普清|标清|高清|HD|hd|超清|超高|超高清|4K|4k|中央|央视|电视台|台|电信|联通|移动")
 
 replace_dict = {
     "plus": "+",
     "PLUS": "+",
     "＋": "+",
-    "CCTV1综合": "CCTV1",
-    "CCTV2财经": "CCTV2",
-    "CCTV3综艺": "CCTV3",
-    "CCTV4国际": "CCTV4",
-    "CCTV4中文国际": "CCTV4",
-    "CCTV4欧洲": "CCTV4",
-    "CCTV5体育": "CCTV5",
-    "CCTV5+体育赛视": "CCTV5+",
-    "CCTV5+体育赛事": "CCTV5+",
-    "CCTV5+体育": "CCTV5+",
-    "CCTV6电影": "CCTV6",
-    "CCTV7军事": "CCTV7",
-    "CCTV7军农": "CCTV7",
-    "CCTV7农业": "CCTV7",
-    "CCTV7国防军事": "CCTV7",
-    "CCTV8电视剧": "CCTV8",
-    "CCTV9记录": "CCTV9",
-    "CCTV9纪录": "CCTV9",
-    "CCTV10科教": "CCTV10",
-    "CCTV11戏曲": "CCTV11",
-    "CCTV12社会与法": "CCTV12",
-    "CCTV13新闻": "CCTV13",
-    "CCTV新闻": "CCTV13",
-    "CCTV14少儿": "CCTV14",
-    "CCTV15音乐": "CCTV15",
-    "CCTV16奥林匹克": "CCTV16",
-    "CCTV17农业农村": "CCTV17",
-    "CCTV17农业": "CCTV17",
 }
 
-region_list = [
-    "广东",
-    "北京",
-    "湖南",
-    "湖北",
-    "浙江",
-    "上海",
-    "天津",
-    "江苏",
-    "山东",
-    "河南",
-    "河北",
-    "山西",
-    "陕西",
-    "安徽",
-    "重庆",
-    "福建",
-    "江西",
-    "辽宁",
-    "黑龙江",
-    "吉林",
-    "四川",
-    "云南",
-    "香港",
-    "内蒙古",
-    "甘肃",
-    "海南",
-    "云南",
-]
-
 origin_map = {
-    "hotel": "酒店源",
-    "multicast": "组播源",
-    "subscribe": "订阅源",
-    "online_search": "关键字源",
-    "whitelist": "白名单",
-    "local": "本地源",
+    "subscribe": t("name.subscribe"),
+    "whitelist": t("name.whitelist"),
+    "local": t("name.local"),
 }
 
 ipv6_proxy = "http://www.ipv6proxy.net/go.php?u="
 
-foodie_url = "http://www.foodieguide.com/iptvsearch/"
-
-foodie_hotel_url = "http://www.foodieguide.com/iptvsearch/hoteliptv.php"
-
-waiting_tip = "🔍️未找到结果文件，若已启动更新，请耐心等待更新完成..."
+waiting_tip = t("msg.waiting_tip")

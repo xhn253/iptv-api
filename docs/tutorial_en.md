@@ -2,15 +2,25 @@
 
 [中文](./tutorial.md) | English
 
-IPTV-API is a highly customizable IPTV interface update project 📺, allowing you to customize channel menus,
-automatically obtain live sources, and generate available results after speed testing and validation, achieving a 『✨
-instant playback experience 🚀』.
+<div align="center">
+  <img src="../static/images/logo.svg" alt="IPTV-API logo"  width="120" height="120"/>
+</div>
 
-There are four installation and operation methods in total, choose the one that suits you.
+<p>
+    <br>
+    ⚡️ IPTV live-source automatic update platform — 🤖 fully automated collection, filtering, speed-testing, and generation 🚀. Supports extensive personalized configuration; paste the resulting address into a player to watch.
+</p>
 
-## Workflow Deployment
+There are four installation and running methods in total (Workflows, Command Line, GUI, Docker). Choose the one that
+suits you.
 
-Use GitHub workflow deployment to automatically update the interface.
+## Workflow deployment
+
+Use GitHub Actions workflows to deploy and manually trigger the update endpoint.
+
+> [!IMPORTANT]
+> Because GitHub resources are limited, workflow updates can only be triggered manually.
+> If you need frequent updates or scheduled runs, please deploy using another method.
 
 ### Enter the IPTV-API Project
 
@@ -54,6 +64,10 @@ This is because some files conflict with the default files of the main repositor
 latest code.
 ![Conflict resolution](./images/conflict.png 'Conflict resolution')
 
+> [!IMPORTANT]
+> To avoid conflicts when updating the code later, it is recommended to copy files in the `config` directory and rename
+> them by adding the `user_` prefix before modifying.
+
 ### Modify Template
 
 When you click to confirm creation in step one, you will automatically jump to your personal repository after success.
@@ -96,10 +110,13 @@ Like editing templates, modify the runtime configuration.
 
 1. Create a file.
 2. Name the configuration file `user_config.ini`.
-3. Paste the default configuration.
-4. Modify the template and result file configuration:
+3. Paste the default configuration. (when creating `user_config.ini`, you can only enter the configuration items you
+   want to modify, no need to copy the entire `config.ini`. Note that the `[Settings]` at the top of the configuration
+   file must be retained, otherwise the custom configuration below will not take effect)
+4. Modify the template and result file configuration and CDN proxy acceleration (recommended):
     - source_file = config/user_demo.txt
     - final_file = output/user_result.txt
+    - cdn_url = (go to the `Govin` public account and reply `cdn` to get it)
 5. Click `Commit changes...` to save.
 
 ![Create user_config.ini](./images/edit-user-config.png 'Create user_config.ini')
@@ -107,38 +124,56 @@ Like editing templates, modify the runtime configuration.
 ![Edit source_file configuration](./images/edit-user-source-file.png 'Edit source_file configuration')
 
 Adjust the configuration as needed, here is the default configuration description:
-[Configuration parameters](./config.md)
+[Configuration parameters](./config_en.md)
 
-#### Tips:
+> [!NOTE]
+> 1. For enabling interface information display, since some players (such as `PotPlayer`) do not support parsing
+     interface
+     supplementary information, causing playback failure, you can modify the configuration: `open_url_info = False` (
+     GUI:
+     uncheck display interface information) to disable this feature.
+> 2. If your network supports IPv6, you can modify the configuration: `ipv6_support = True` (GUI: Check
+     `Force assume the current network supports IPv6`) to skip the support check.
 
-1. For enabling interface information display, since some players (such as `PotPlayer`) do not support parsing interface
-   supplementary information, causing playback failure, you can modify the configuration: `open_url_info = False` (GUI:
-   uncheck display interface information) to disable this feature.
-2. If your network supports IPv6, you can modify the configuration: `ipv6_support = True` (GUI: check skip IPv6
-   detection) to skip the support check.
-3. Enabling keyword search (disabled by default) will significantly increase the update time, not recommended to enable.
-
-#### Similarly, you can customize subscription sources, blacklists, and whitelists (it is recommended to copy files and rename them with the
-
-`user_` prefix).
+#### Add data sources and more
 
 - Subscription sources (`config/subscribe.txt`)
 
-  Supports txt and m3u addresses as subscriptions, the program will read the channel interface data in sequence.
+  Since no default subscription addresses are provided, you need to add them yourself; otherwise the update results may
+  be empty. Both `.txt` and `.m3u` URLs are supported as subscriptions, and the program will read channel interface
+  entries from them sequentially.
   ![Subscription sources](./images/subscribe.png 'Subscription sources')
 
 
 - Local sources（`config/local.txt`）
 
-  The channel interface data comes from local files, and the program will read the channel interface data in sequence.
-  ![Local sources](./images/local.png 'Local sources')
+  Channel interface data comes from local files. If there are multiple local source files, you can create a `local`
+  directory under `config` to store them; the program will read the channel interface data from them in order. Supports
+  `txt` and `m3u` files.
+
+
+- Logo source (`config/logo`)
+
+  Directory for channel logo images. The program will match corresponding logo images in this directory based on the
+  channel names in the template. If a remote library `logo_url` is used, the remote source will be preferred.
+
+
+- EPG Source (`config/epg.txt`)
+
+  The source of program guide information. The program will sequentially fetch the program guide data from the
+  subscription addresses in the file and aggregate the output.
+
+
+- Channel Aliases (`config/alias.txt`)
+
+  A list of aliases for channel names, used to map multiple names to a single name when fetching from the interface,
+  improving the fetch volume and accuracy. Format: TemplateChannelName,Alias1,Alias2,Alias3
 
 
 - Blacklist (`config/blacklist.txt`)
 
   Interfaces that match the blacklist keywords will be filtered and not collected, such as low-quality interfaces with
   ads.
-  ![Blacklist](./images/blacklist.png 'Blacklist')
 
 
 - Whitelist (`config/whitelist.txt`)
@@ -147,14 +182,6 @@ Adjust the configuration as needed, here is the default configuration descriptio
   the top of the results. Fill in the channel name to directly retain the record in the final result, such as: CCTV-1,
   interface address, only filling in the interface address will apply to all channels, multiple records are entered on
   separate lines.
-  ![Whitelist](./images/whitelist.png 'Whitelist')
-
-
-- Multicast data (`config/rtp`)
-
-  In addition, you can also maintain multicast source data yourself, the files are located in the config/rtp directory,
-  and the file naming format is: `region_operator.txt`.
-  ![Multicast data](./images/rtp.png 'Multicast data')
 
 ### Run Update
 
@@ -197,9 +224,10 @@ Now you can run the update workflow.
 ##### (3) Workflow in progress:
 
 Wait a moment, and you will see that your first update workflow is running!
-(Note: The running time depends on the number of channels and pages in your template and other configurations, and also
-largely depends on the current network conditions. Please be patient. The default template and configuration usually
-take about 15 minutes.)
+> [!NOTE]\
+> The running time depends on the number of channels and pages in your template and other configurations, and also
+> largely depends on the current network conditions. Please be patient. The default template and configuration usually
+> take about 15 minutes.
 ![Workflow in progress](./images/workflow-running.png 'Workflow in progress')
 
 ##### (4) Cancel the running Workflow:
@@ -215,45 +243,25 @@ mark).
 ![Workflow executed successfully](./images/workflow-success.png 'Workflow executed successfully')
 
 At this point, you can visit the file link to see if the latest results have been synchronized:
-https://ghproxy.cc/https://raw.githubusercontent.com/your\_github\_username/repository\_name (corresponding to the TV
-created when forking)
-/master/output/user\_result.txt
+https://raw.githubusercontent.com/your-github-username/repository-name/master/output/user_result.txt
 
-Or proxy address:
-https://cdn.jsdelivr.net/gh/your\_github\_username/repository\_name (corresponding to the TV created when forking)
-@master/output/user\_result.txt
+Recommended CDN-accelerated URL:
+{cdn_url}/https://raw.githubusercontent.com/your-github-username/repository-name/master/output/user_result.txt
 
 ![Username and Repository Name](./images/rep-info.png 'Username and Repository Name')
 
 If you can access this link and it returns the updated interface content, then your live source interface link has been
 successfully created! Simply copy and paste this link into software like `TVBox` in the configuration field to use~
 
-- Note: Except for the first execution of the workflow, which requires you to manually trigger it, subsequent
-  executions (default: 6:00 AM and 18:00 PM Beijing time daily) will be automatically triggered. If you have modified
-  the template or configuration files and want to execute the update immediately, you can manually trigger (2)
-  `Run workflow`.
-
-#### 4. Modify Workflow Update Frequency (optional)
-
-If you want to modify the update frequency (default: 6:00 AM and 18:00 PM Beijing time daily), you can modify the
-`on: schedule: - cron` field:
-![.github/workflows/main.yml](./images/schedule-cron.png '.github/workflows/main.yml')
-
-If you want to perform updates every 2 days, you can modify it like this:
-
-```bash
-- cron: '0 22 */2 * *'
-- cron: '0 10 */2 * *'
-
-```markdown
-##### 1. It is strongly recommended not to set the update frequency too high, as there is no significant difference in interface content over a short period. High update frequency and long-running workflows may be considered resource abuse, leading to the risk of repository and account suspension.
-
-##### 2. Please monitor the runtime of your workflows. If you find the execution time too long, reduce the number of channels in the template, adjust the pagination and interface count in the configuration to comply with runtime requirements.
+> [!NOTE]\
+> If you have modified the template or configuration files and want to execute the update immediately, you can manually
+> trigger (2)`Run workflow`.
 
 ## Command Line
 
 1. Install Python
-   Please download and install Python from the official website, and select the option to add Python to the system environment variable Path during installation.
+   Please download and install Python from the official website, and select the option to add Python to the system
+   environment variable Path during installation.
 
 2. Run the update
    Open the terminal CMD in the project directory and run the following commands in sequence:
@@ -282,8 +290,8 @@ pipenv run service
 
 ## GUI Software
 
-1. Download the [IPTV-API update software](https://github.com/Guovin/iptv-api/releases), open the software, and click
-   update to complete the update.
+1. Download the [IPTV-API Update Software](https://github.com/Guovin/iptv-api/releases), open the software, and click
+   Start to perform the update.
 
 2. Or run the following command in the project directory to open the GUI software:
 
@@ -293,100 +301,105 @@ pipenv run ui
 
 ![IPTV-API Update Software](./images/ui.png 'IPTV-API Update Software')
 
-If you do not understand the software configuration options, do not change anything, just click start update.
-
 ## Docker
 
-- `iptv-api` (full version): High performance requirements, slower update speed, high stability, and success rate;
-  modify the configuration `open_driver = False` to switch to the `Lite` version mode (recommended for hotel sources,
-  multicast sources, and keyword search).
-- `iptv-api:lite` (lite version): Lightweight, low performance requirements, fast update speed, uncertain stability (
-  recommended for subscription sources).
+### 1. Deployment with Compose
 
-### 1. Pull the image
+Download the [docker-compose.yml](../docker-compose.yml) or create one by copying the content (internal parameters can
+be changed as needed), then run the following command in the path where the file is located:
 
-- iptv-api
+```bash
+docker compose up -d
+```
+
+### 2. Manual deployment with commands
+
+#### (1) Pull the image
 
 ```bash
 docker pull guovern/iptv-api:latest
 ```
 
-🚀 Proxy acceleration (recommended for users in China):
+🚀 Proxy acceleration (use this command if pulling fails, but it may download an older version):
 
 ```bash
 docker pull docker.1ms.run/guovern/iptv-api:latest
 ```
 
-- iptv-api:lite
+#### (2) Run the container
 
 ```bash
-docker pull guovern/iptv-api:lite
+docker run -d -p 80:8080 guovern/iptv-api
 ```
 
-🚀 Proxy acceleration (recommended for users in China):
+**Environment variables:**
+
+| Variable        | Description                                                                                                      | Default   |
+|:----------------|:-----------------------------------------------------------------------------------------------------------------|:----------|
+| PUBLIC_DOMAIN   | Public domain or IP address, determines external access and the Host used in push stream results                 | 127.0.0.1 |
+| PUBLIC_PORT     | Public port, set to the mapped port, determines external access address and the port used in push stream results | 80        |
+| NGINX_HTTP_PORT | Nginx HTTP service port, needs to be mapped for external access                                                  | 8080      |
+
+If you need to modify environment variables, add the following parameters after the above run command:
 
 ```bash
-docker pull docker.1ms.run/guovern/iptv-api:lite
+# Modify public domain
+-e PUBLIC_DOMAIN=your.domain.com
+# Modify public port
+-e PUBLIC_PORT=80
 ```
 
-### 2. Run the container
+In addition to the environment variables listed above, you can also override
+the [configuration items](../docs/config_en.md) in the configuration file via environment variables.
 
-- iptv-api
+**Mounts:** used to synchronize files between the host and the container. You can edit templates, configs, and access
+generated result files directly on the host. Append the following options to the run command above:
 
 ```bash
-docker run -d -p 8000:8000 guovern/iptv-api
+# Mount config directory
+-v /iptv-api/config:/iptv-api/config
+# Mount output directory
+-v /iptv-api/output:/iptv-api/output
 ```
 
-- iptv-api:lite
+#### 3. Update Results
 
-```bash
-docker run -d -p 8000:8000 guovern/iptv-api:lite
-```
+| Endpoint        | Description                                     |
+|:----------------|:------------------------------------------------|
+| /               | Default endpoint                                |
+| /m3u            | m3u format endpoint                             |
+| /txt            | txt format endpoint                             |
+| /ipv4           | ipv4 default endpoint                           |
+| /ipv6           | ipv6 default endpoint                           |
+| /ipv4/txt       | ipv4 txt endpoint                               |
+| /ipv6/txt       | ipv6 txt endpoint                               |
+| /ipv4/m3u       | ipv4 m3u endpoint                               |
+| /ipv6/m3u       | ipv6 m3u endpoint                               |
+| /content        | Endpoint content                                |
+| /log/result     | Log of valid results                            |
+| /log/speed-test | Log of all interfaces involved in speed testing |
+| /log/statistic  | Log of statistics results                       |
+| /log/nomatch    | Log of unmatched channels                       |
 
-#### Mount (recommended):
+**RTMP Streaming:**
 
-To synchronize files between the host and the container, modify templates, configurations, and obtain update result
-files directly in the host folder.
+> [!NOTE]
+> 1. If deploying on a server, be sure to set the `PUBLIC_DOMAIN` environment variable to the server's domain name or IP
+     address and the `PUBLIC_PORT` environment variable to the public port; otherwise the streaming addresses will not
+     be accessible.
+> 2. When streaming is enabled, obtained interfaces (e.g., subscription sources) will be streamed by default.
+> 3. To stream local video sources, create an `hls` folder under the `config` directory and place video files named
+     after the channel; the program will automatically stream them to the corresponding channels.
 
-Using the host path `/etc/docker` as an example:
-
-- iptv-api
-
-```bash
--v /etc/docker/config:/iptv-api/config
--v /etc/docker/output:/iptv-api/output
-```
-
-- iptv-api:lite
-
-```bash
--v /etc/docker/config:/iptv-api-lite/config
--v /etc/docker/output:/iptv-api-lite/output
-```
-
-##### Note: If you pull the image again to update the version, and there are changes or additions to the configuration files, be sure to overwrite the old configuration files in the host (config directory), as the host configuration files cannot be updated automatically. Otherwise, the container will still run with the old configuration.
-
-#### Environment Variables:
-
-- Port
-
-```bash
--e APP_PORT=8000
-```
-
-- Scheduled execution time
-
-```bash
--e UPDATE_CRON1="0 22 * * *"
--e UPDATE_CRON2="0 10 * * *"
-```
-
-### 3. Update results
-
-```
-- API address: `ip:8000`
-- m3u api: `ip:8000/m3u`
-- txt api: `ip:8000/txt`
-- API content: `ip:8000/content`
-- Speed test log: `ip:8000/log`
-```
+| Streaming Endpoint | Description                          |
+|:-------------------|:-------------------------------------|
+| /hls               | hls streaming endpoint               |
+| /hls/txt           | hls txt streaming endpoint           |
+| /hls/m3u           | hls m3u streaming endpoint           |
+| /hls/ipv4          | hls ipv4 default streaming endpoint  |
+| /hls/ipv6          | hls ipv6 default streaming endpoint  |
+| /hls/ipv4/txt      | hls ipv4 txt streaming endpoint      |
+| /hls/ipv4/m3u      | hls ipv4 m3u streaming endpoint      |
+| /hls/ipv6/txt      | hls ipv6 txt streaming endpoint      |
+| /hls/ipv6/m3u      | hls ipv6 m3u streaming endpoint      |
+| /stat              | Streaming status statistics endpoint |
